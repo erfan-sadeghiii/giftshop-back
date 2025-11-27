@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Product, Cart, CartItem,ProductImage,Category,Feature,ProductFeature,Comment,AmazingSlider
+from .models import Product, Cart, CartItem,ProductImage,Category,Feature,ProductFeature,Comment,AmazingSlider,Checkout
 
 
 
@@ -289,3 +289,8 @@ class AmazingSliderSerializer(serializers.ModelSerializer):
         slider.products.set(product_ids)
         return slider
 
+class CheckoutSerializer(serializers.ModelSerializer):
+    user_name = serializers.CharField(source='user.username', read_only=True)
+    class Meta:
+        model = Checkout
+        fields = '__all__'

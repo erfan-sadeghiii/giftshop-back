@@ -276,3 +276,38 @@ class AmazingSlider(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+
+
+
+
+
+
+
+
+
+
+# payments/models.py
+
+
+class Checkout(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    authority = models.CharField(max_length=255, unique=True)
+    amount = models.PositiveIntegerField()
+    items = models.JSONField(default=list)
+    # Payment result fields
+    is_paid = models.BooleanField(default=False)
+    ref_id = models.CharField(max_length=255, null=True, blank=True)
+    card_pan = models.CharField(max_length=50, null=True, blank=True)
+    card_hash = models.CharField(max_length=255, null=True, blank=True)
+    fee_type = models.CharField(max_length=50, null=True, blank=True)
+    fee = models.IntegerField(null=True, blank=True)
+
+    # Errors
+    error_code = models.IntegerField(null=True, blank=True)
+    error_message = models.CharField(max_length=255, null=True, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user} - {self.amount} - {self.authority}-is paid :{self.is_paid}"
+

@@ -21,6 +21,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-9lxfs7ecmiwi-ahb#ut=b1t07x_z-jc4-tzv74#==(d32^uige'
+ZARINPAL_MERCHANT_ID = "5573abd6-9305-45fb-a257-76871bd798a7"
+ZARINPAL_CALLBACK_URL = "https://api.tixogame.com/shop/checkout"
+
+ZARINPAL_PAYMENT_BASE_URL="https://sandbox.zarinpal.com/pg/StartPay/"
+ZARINPAL_BASE_URL="https://sandbox.zarinpal.com/pg/v4/payment/"
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False

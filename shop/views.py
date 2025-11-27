@@ -1,9 +1,22 @@
 
 
 # Create your views here.
+
+
+
+
+
+
+
+
+
+
+
+
+from django.http import Http404
 from rest_framework import viewsets, permissions
-from .models import Cart, CartItem,Product,Category,ProductFeature, Feature,Comment,AmazingSlider
-from .serializers import CartSerializer, CartItemSerializer ,ProductFeatureSerializer, ProductSerializer,ProductCreateSerializer, CategorySerializer, FeatureSerializer,CommentSerializer,AmazingSliderSerializer
+from .models import Cart, CartItem,Product,Category,ProductFeature, Feature,Comment,AmazingSlider,Checkout
+from .serializers import CartSerializer, CartItemSerializer ,ProductFeatureSerializer, ProductSerializer,ProductCreateSerializer, CategorySerializer, FeatureSerializer,CommentSerializer,AmazingSliderSerializer,CheckoutSerializer
 
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -356,3 +369,202 @@ class AmazingSliderViewSet(viewsets.ModelViewSet):
         if self.request.method in permissions.SAFE_METHODS:
             return [permissions.AllowAny()]
         return [permissions.IsAdminUser()]
+
+
+
+
+
+
+
+
+
+
+
+
+import requests
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from django.conf import settings
+
+# Optional: you can create a Payment model to store pending payments
+# from .models import Payment
+@api_view(['POST'])
+def create_payment(request):
+    try:
+        amount = request.data.get("amount")
+        cartItems = request.data.get("cartItems")
+        description = request.data.get("description", "Transaction")
+        metadata = request.data.get("metadata", {})
+
+        if not amount:
+            return Response({"error": "Amount is required"}, status=400)
+
+        amount = int(amount)
+
+        payload = {
+            "merchant_id": settings.ZARINPAL_MERCHANT_ID,
+            "amount": amount,
+            "callback_url": settings.ZARINPAL_CALLBACK_URL,
+            "description": description,
+            "metadata": metadata
+        }
+
+        res = requests.post(
+            settings.ZARINPAL_BASE_URL + "request.json",
+            json=payload,
+            headers={"Content-Type": "application/json"},
+            timeout=10
+        )
+
+        res_data = res.json()
+
+        authority = res_data["data"]["authority"]
+        payment_url = f"{settings.ZARINPAL_PAYMENT_BASE_URL}{authority}"
+
+        # 🔥 Save to DB
+        Checkout.objects.create(
+            user=request.user,
+            authority=authority,
+            amount=amount,
+            items=cartItems
+        )
+
+        return Response({
+            "authority": authority,
+            "payment_url": payment_url
+        })
+
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
+
+
+
+
+
+from django.db import transaction
+
+
+from django.shortcuts import redirect
+@api_view(['GET'])
+def verify_payment(request):
+    try:
+        authority = request.GET.get("Authority")
+        status = request.GET.get("Status")
+
+        if not authority or not status:
+            return Response({"error": "Missing Authority or Status"}, status=400)
+
+        # If canceled
+        if status != "OK":
+            redirect_url = "https://tixogame.com/final-check/?status=failed"
+            return redirect(redirect_url)
+
+        # Get checkout record
+        try:
+            checkout = Checkout.objects.get(authority=authority)
+        except Checkout.DoesNotExist:
+            redirect_url = "https://tixogame.com/final-check/?status=not_found"
+            return redirect(redirect_url)
+
+        # Verify with Zarinpal
+        payload = {
+            "merchant_id": settings.ZARINPAL_MERCHANT_ID,
+            "amount": checkout.amount,
+            "authority": authority
+        }
+
+        res = requests.post(
+            settings.ZARINPAL_BASE_URL + "verify.json",
+            json=payload,
+            headers={"Content-Type": "application/json"}
+        )
+
+        res_data = res.json()
+        data = res_data.get("data", {})
+        errors = res_data.get("errors", {})
+
+        # SUCCESS (100 or 101)
+        if data.get("code") in [100, 101]:
+            with transaction.atomic():  # ensure atomic operation
+                for item in checkout.items:
+                    product_id = item.get("product", {}).get("id")
+                    quantity = item.get("quantity", 0)
+                    
+                    if not product_id or quantity <= 0:
+                        continue  # skip invalid entries
+
+                    try:
+                        product = Product.objects.get(id=product_id)
+                        product.stock_quantity = max(product.stock_quantity - quantity, 0)
+                        product.save()
+                    except Product.DoesNotExist:
+                        # optionally log missing product
+                        continue
+            checkout.is_paid = True
+            checkout.ref_id = data.get("ref_id")
+            checkout.card_pan = data.get("card_pan")
+            checkout.card_hash = data.get("card_hash")
+            checkout.fee_type = data.get("fee_type")
+            checkout.fee = data.get("fee")
+            checkout.save()
+
+            # Redirect with full info
+            redirect_url = (
+                "https://tixogame.com/final-check/"
+                f"?status=success"
+                f"&ref_id={checkout.ref_id}"
+                f"&amount={checkout.amount}"
+                f"&authority={authority}"
+                f"&card_pan={checkout.card_pan}"
+                
+            )
+
+            # ✔ delete if you want:
+            # checkout.delete()
+
+            return redirect(redirect_url)
+
+        # FAIL
+        else:
+            checkout.is_paid = False
+            checkout.error_code = errors.get("code")
+            checkout.error_message = errors.get("message")
+            checkout.save()
+
+            redirect_url = (
+                "https://tixogame.com/final-check/"
+                f"?status=failed"
+                f"&error_code={checkout.error_code}"
+                f"&error_message={checkout.error_message}"
+                f"&errors={errors}"
+            )
+
+            return redirect(redirect_url)
+
+    except Exception as e:
+        return redirect(f"https://tixogame.com/final-check/?status=error&message={str(e)}")
+
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def user_checkouts(request):
+    user = request.user
+    checkouts = Checkout.objects.filter(user=user).order_by('-created_at')
+    serializer = CheckoutSerializer(checkouts, many=True)
+    return Response(serializer.data)
+
+
+
+class AdminCheckoutViewSet(viewsets.ModelViewSet):
+    queryset = Checkout.objects.all().order_by('-created_at')
+    serializer_class = CheckoutSerializer
+    permission_classes = [permissions.IsAdminUser]
+
+    # Optional: custom action to toggle is_paid quickly
+    @action(detail=True, methods=['patch'])
+    def toggle_paid(self, request, pk=None):
+        checkout = self.get_object()
+        checkout.is_paid = not checkout.is_paid
+        checkout.save()
+        return Response({"id": checkout.id, "is_paid": checkout.is_paid})
