@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Product, Cart, CartItem,ProductImage,Category,Feature,ProductFeature,Comment
+from .models import Product, Cart, CartItem,ProductImage,Category,Feature,ProductFeature,Comment,AmazingSlider
 
 
 
@@ -270,3 +270,22 @@ class MenuCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = MenuCategory
         fields = ["id", "name", "icon", "order", "sections"]
+
+
+class AmazingSliderSerializer(serializers.ModelSerializer):
+    products = ProductSerializer(many=True, read_only=True)
+    product_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        write_only=True
+    )
+
+    class Meta:
+        model = AmazingSlider
+        fields = ['id', 'products', 'product_ids', 'duration', 'created_at']
+
+    def create(self, validated_data):
+        product_ids = validated_data.pop("product_ids")
+        slider = AmazingSlider.objects.create(**validated_data)
+        slider.products.set(product_ids)
+        return slider
+

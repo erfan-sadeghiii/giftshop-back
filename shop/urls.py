@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import  MegaMenuDetailView,MenuSectionListCreateView, MenuSectionDetailView, MenuItemListCreateView, MenuItemDetailView,MegaMenuView,get_user_cart,add_to_cart, TicketViewSet, ReplyViewSet, ProductSearchView,CartViewSet, CartItemViewSet,BannerViewSet, ProductViewSet,FeatureViewSet,CategoryViewSet,ProductFeatureViewSet,CommentViewSet,SliderViewSet
+from .views import  MegaMenuDetailView,MenuSectionListCreateView, MenuSectionDetailView, MenuItemListCreateView, MenuItemDetailView,MegaMenuView,get_user_cart,add_to_cart, TicketViewSet, ReplyViewSet, ProductSearchView,CartViewSet, CartItemViewSet,BannerViewSet, ProductViewSet,FeatureViewSet,CategoryViewSet,ProductFeatureViewSet,CommentViewSet,SliderViewSet,AmazingSliderViewSet
 
 router = DefaultRouter()
 router.register(r'carts', CartViewSet, basename='cart')
@@ -15,7 +15,7 @@ router.register(r'sliders', SliderViewSet, basename='slider')
 router.register(r'banners', BannerViewSet, basename='banner')
 router.register(r'tickets', TicketViewSet, basename='ticket')
 router.register(r'replies', ReplyViewSet, basename='reply')
-
+router.register(r"amazing-slider", AmazingSliderViewSet, basename='amazing-slider')
 
 
 

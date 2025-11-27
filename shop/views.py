@@ -2,8 +2,8 @@
 
 # Create your views here.
 from rest_framework import viewsets, permissions
-from .models import Cart, CartItem,Product,Category,ProductFeature, Feature,Comment
-from .serializers import CartSerializer, CartItemSerializer ,ProductFeatureSerializer, ProductSerializer,ProductCreateSerializer, CategorySerializer, FeatureSerializer,CommentSerializer
+from .models import Cart, CartItem,Product,Category,ProductFeature, Feature,Comment,AmazingSlider
+from .serializers import CartSerializer, CartItemSerializer ,ProductFeatureSerializer, ProductSerializer,ProductCreateSerializer, CategorySerializer, FeatureSerializer,CommentSerializer,AmazingSliderSerializer
 
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -333,3 +333,26 @@ class MenuItemDetailView(generics.RetrieveUpdateDestroyAPIView):
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(status=204) 
+
+
+class AmazingSliderViewSet(viewsets.ModelViewSet):
+    queryset = AmazingSlider.objects.all()
+
+    serializer_class = AmazingSliderSerializer
+
+    # def get_queryset(self):
+    #     # Only return the most recent slider
+    #     return AmazingSlider.objects.prefetch_related('products').all()
+
+    # def get_permissions(self):
+    #     if self.request.method in permissions.SAFE_METHODS:
+    #         return [permissions.AllowAny()]
+    #     return [IsAdminOrOwner()]
+    # def get_permissions(self):  
+    # if self.request.method in permissions.SAFE_METHODS:
+    #     return [permissions.AllowAny()]
+    # return [permissions.IsAdminUser()]
+    def get_permissions(self):
+        if self.request.method in permissions.SAFE_METHODS:
+            return [permissions.AllowAny()]
+        return [permissions.IsAdminUser()]

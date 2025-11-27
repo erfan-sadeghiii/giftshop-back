@@ -267,3 +267,12 @@ class MenuItem(models.Model):
 
     def __str__(self):
         return self.name
+
+class AmazingSlider(models.Model):
+    products = models.ManyToManyField(Product, related_name="amazing_sliders")
+    duration = models.PositiveIntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+    class Meta:
+        ordering = ['-created_at']
