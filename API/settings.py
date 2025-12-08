@@ -178,11 +178,11 @@ from datetime import timedelta
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
-    'ROTATE_REFRESH_TOKENS': True,
-    'BLACKLIST_AFTER_ROTATION': True,
+    # 'ROTATE_REFRESH_TOKENS': True,
+    # 'BLACKLIST_AFTER_ROTATION': True,
     'AUTH_COOKIE': 'refresh_token',  # optional if using cookie
-    'AUTH_COOKIE_SECURE': False,     # True in production
-    'AUTH_COOKIE_SAMESITE': 'Lax',
+    'AUTH_COOKIE_SECURE': True,     # True in production
+    'AUTH_COOKIE_SAMESITE': 'Strict',
     'AUTH_COOKIE_HTTP_ONLY': True,
 }
 
@@ -191,9 +191,11 @@ SIMPLE_JWT = {
 # settings.py
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",  # your frontend
+    "https://tixogame.com",
+    "https://www.tixogame.com",
 ]
-CORS_ALLOW_ALL_ORIGINS =True
+
+# CORS_ALLOW_ALL_ORIGINS =True
 # ----my codes ---------------------------|
 
 

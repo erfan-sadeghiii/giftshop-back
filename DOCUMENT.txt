@@ -1,0 +1,141 @@
+
+
+______________________________________________________________________________
+
+            DJANGO BACKEND PROJECT DOCUMENTATION
+        |===========================================|
+        |the only IMPORTANT thing is here :         |
+        |API urls :                                 |
+        |                                           |
+        |- /swagger/ → Swagger UI                   |
+        |- /redoc/ → Redoc UI                       |
+        |===========================================|
+
+______________________________________________________________________________
+
+
+PROJECT ROOT
+------------
+/accounts/           → User authentication & account management
+/API/                → main app
+/blog/               → Blog app 
+/shop/               → shop/e-commerce app
+
+------------------------------------------------------------
+ACCOUNTS APP
+------------
+Handles user registration, login, logout, JWT authentication, and user detail endpoints.
+
+Key files / URLs:
+- register/ → User registration
+- login/ → User login
+- logout/ → Logout
+- refresh/ → Refresh JWT
+- me/ → Get current user
+- users/ → List users
+- users/<id>/ → User detail
+
+------------------------------------------------------------
+BLOG APP
+------------
+Handles articles
+
+Key components:
+- BlogViewSet → API endpoints for blog CRUD
+- URLs: root '' (via router)
+
+------------------------------------------------------------
+SHOP APP
+------------
+Main e-commerce functionality.
+
+MODELS
+------
+1. Category → Product categories with parent-child relationships
+2. Feature → Product features (color, RAM, brand)
+3. Product → Product model with price, stock, discount, category, description
+4. ProductFeature → Many-to-many feature values for products
+5. ProductImage → Product images
+6. Cart → User cart with status (pending, canceled, paid)
+7. CartItem → Items inside the cart
+8. Comment → Product comments and ratings
+9. Slider → Homepage sliders
+10. Banner → Homepage banners (left/right positions)
+11. Ticket → Support tickets
+12. Reply → Replies to tickets
+13. MenuCategory → Mega menu top-level categories
+14. MenuSection → Sections inside menu categories
+15. MenuItem → Items inside sections
+16. AmazingSlider → Promotional product sliders
+17. Checkout → Payment records
+
+VIEWS
+-----
+- ProductViewSet → CRUD for products
+- FeatureViewSet → CRUD for features
+- CategoryViewSet → CRUD for categories
+- ProductFeatureViewSet → CRUD for product features
+- CommentViewSet → CRUD for comments
+- SliderViewSet → CRUD for sliders
+- BannerViewSet → CRUD for banners
+- TicketViewSet → CRUD for tickets
+- ReplyViewSet → CRUD for ticket replies
+- AmazingSliderViewSet → CRUD for amazing sliders
+- AdminCheckoutViewSet → Admin view for checkouts
+- user_checkouts → Get user checkouts
+- get_user_cart → Get current user cart
+- add_to_cart → Add product to cart
+- ProductSearchView → Search products
+- MegaMenuView / MegaMenuDetailView → Get mega menu
+- MenuSectionListCreateView / MenuSectionDetailView → CRUD sections
+- MenuItemListCreateView / MenuItemDetailView → CRUD menu items
+- create_payment → Initiate Zarinpal payment
+- verify_payment → Verify payment result
+
+URL ROUTES
+----------
+API Router:
+- /products/
+- /features/
+- /categories/
+- /productsFeatures/
+- /comments/
+- /sliders/
+- /banners/
+- /tickets/
+- /replies/
+- /amazing-slider/
+- /admin/checkouts/
+
+Other Paths:
+- /products/search/
+- /payment/ → create payment
+- /checkout/ → verify payment
+- /my-checkouts/ → user checkouts
+- /megamenu/ → mega menu
+- /cart/ → get cart
+
+
+------------------------------------------------------------
+PROJECT URLS (ROOT)
+-------------------
+- /blog/ → include blog.urls
+- /shop/ → include shop.urls
+- /admin/ → Django admin
+- /api/accounts/ → include accounts.urls
+- /swagger/ → Swagger UI
+- /redoc/ → Redoc UI
+- /api/token/ → JWT token obtain
+- /api/token/refresh/ → JWT token refresh
+
+------------------------------------------------------------
+NOTES
+-----
+
+- JWT authentication implemented for API access.
+- Swagger and Redoc available for API documentation.
+- Static files served via /staticfiles/ in production.
+
+------------------------------------------------------------
+END OF BACKEND DOCUMENTATION
+------------------------------------------------------------
