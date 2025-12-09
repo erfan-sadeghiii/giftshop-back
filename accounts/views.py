@@ -268,8 +268,9 @@ import requests
 
 
 
-API_KEY = "yaVb2gviOWyDiVJr2doB6XWXpyUQZCeDDrN83RtzCL26ckgZ"
-TEMPLATE_ID = 123456
+# API_KEY = "yaVb2gviOWyDiVJr2doB6XWXpyUQZCeDDrN83RtzCL26ckgZ"
+API_KEY = "LDftCnqtoi6uou6T0M46V1Vt0tjgyuvUS7LNbcNHjwwkRWX2"
+TEMPLATE_ID = 551725
 LOCKOUT_TIME = timedelta(minutes=1)  # lockout duration
 
 @api_view(["POST"])
@@ -302,7 +303,7 @@ def send_verification_code(request):
         payload = {
             "mobile": mobile,
             "templateId": TEMPLATE_ID,
-            "parameters": [{"name": "PARAMETER1", "value": code}]
+            "parameters": [{"name": "CODE", "value": code}]
         }
         headers = {"Content-Type": "application/json", "Accept": "text/plain", "x-api-key": API_KEY}
 
@@ -316,7 +317,9 @@ def send_verification_code(request):
         # Save code in session
         request.session[f"verify_{mobile}"] = code
 
-        return Response({"sent": True, "code": code, "sms_response": sms_response})
+        return Response({"sent": True, 
+                        #  "code": code,
+                           "sms_response": sms_response})
 
     except Exception as e:
         import traceback
@@ -405,7 +408,7 @@ def send_verification_code_login(request):
         payload = {
             "mobile": mobile,
             "templateId": TEMPLATE_ID,
-            "parameters": [{"name": "PARAMETER1", "value": code}]
+            "parameters": [{"name": "CODE", "value": code}]
         }
         headers = {"Content-Type": "application/json", "x-api-key": API_KEY}
 
@@ -418,7 +421,9 @@ def send_verification_code_login(request):
         # Save OTP in session
         request.session[f"login_verify_{mobile}"] = code
 
-        return Response({"sent": True, "code": code, "sms_response": sms_response})
+        return Response({"sent": True, 
+                        #  "code": code,
+                          "sms_response": sms_response})
 
     except Exception as e:
         return Response({"detail": "Internal Error", "error": str(e)}, status=500)
