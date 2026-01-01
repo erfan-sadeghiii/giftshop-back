@@ -5,7 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate, get_user_model
 from .serializers import RegisterSerializer, UserSerializer, CustomTokenObtainPairSerializer
-
+from .permissions import IsAdminOrOwner 
 User = get_user_model()
 
 # ---------------- REGISTER ----------------
@@ -137,15 +137,6 @@ def me_view(request):
 
 
 
-from rest_framework.permissions import BasePermission
-
-class IsAdminOrOwner(BasePermission):
-    def has_permission(self, request, view):
-        return bool(
-            request.user
-            and request.user.is_authenticated
-            and (request.user.role in ['admin', 'owner'])
-        )
 
 
 
@@ -163,6 +154,27 @@ class UserListView(generics.ListAPIView):
 
 
 
+# class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
+#     queryset = User.objects.all()
+#     serializer_class = UserSerializer
+#     permission_classes = [IsAdminOrOwner]
+
+#     def patch(self, request, *args, **kwargs):
+#         user = self.get_object()
+
+#         # Only owner can change roles
+#         if request.user.role != "owner" and request.data.get("role"):
+#             return Response(
+#                 {"detail": "فقط مالک می‌تواند نقش‌ها را تغییر دهد."},
+#                 status=status.HTTP_403_FORBIDDEN
+#             )
+
+#         # Partial update — only update the fields sent in request
+#         serializer = self.get_serializer(user, data=request.data, partial=True)
+#         serializer.is_valid(raise_exception=True)
+#         serializer.save()
+#         return Response(serializer.data)
+
 class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
@@ -170,22 +182,24 @@ class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def patch(self, request, *args, **kwargs):
         user = self.get_object()
+        data = request.data.copy()  # Make a mutable copy
 
         # Only owner can change roles
-        if request.user.role != "owner" and request.data.get("role"):
+        if "role" in data and request.user.role != "owner":
             return Response(
                 {"detail": "فقط مالک می‌تواند نقش‌ها را تغییر دهد."},
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        # Partial update — only update the fields sent in request
-        serializer = self.get_serializer(user, data=request.data, partial=True)
+        # Normal users can only update their own discord
+        if request.user == user and not request.user.is_admin and not request.user.is_owner:
+            allowed_fields = ["discord"]
+            data = {field: data[field] for field in data if field in allowed_fields}
+
+        serializer = self.get_serializer(user, data=data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response(serializer.data)
-
-
-
+        return Response(serializer.data, status=status.HTTP_200_OK)  # ✅ must return
 
 
 

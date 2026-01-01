@@ -1,15 +1,9 @@
-from rest_framework import permissions
+from rest_framework.permissions import BasePermission
 
-class IsOwnerOrAdmin(permissions.BasePermission):
-    """
-    Allows access only to users with role 'owner' or 'admin'.
-    """
+class IsAdminOrOwner(BasePermission):
     def has_permission(self, request, view):
-        return request.user.is_authenticated and request.user.role in ['owner', 'admin']
-
-class IsOwner(permissions.BasePermission):
-    """
-    Allows access only to users with role 'owner'.
-    """
-    def has_permission(self, request, view):
-        return request.user.is_authenticated and request.user.role == 'owner'
+        return bool(
+            request.user
+            and request.user.is_authenticated
+            and (request.user.role in ['admin', 'owner'])
+        )
