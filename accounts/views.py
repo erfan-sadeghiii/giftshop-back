@@ -52,14 +52,23 @@ def login_view(request):
     if "@" in identifier:
         try:
             user_obj = User.objects.get(email=identifier)
-            user = authenticate(username=user_obj.username, password=password)
         except User.DoesNotExist:
-            user = None
+            return Response({"detail": "کاربری با این ایمیل یافت نشد"}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Check password explicitly
+        if not user_obj.check_password(password):
+            return Response({"detail": "رمز عبور اشتباه است"}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        user = user_obj  # authentication successful
     else:
+        # Username login
         user = authenticate(username=identifier, password=password)
-
-    if not user:
-        return Response({"detail": "کاربر یافت نشد"}, status=status.HTTP_401_UNAUTHORIZED)
+        if not user:
+            # Distinguish between wrong username and wrong password
+            if User.objects.filter(username=identifier).exists():
+                return Response({"detail": "رمز عبور اشتباه است"}, status=status.HTTP_401_UNAUTHORIZED)
+            else:
+                return Response({"detail": "کاربری با این نام کاربری یافت نشد"}, status=status.HTTP_404_NOT_FOUND)
 
     # Use custom token serializer for role embedding
     token_serializer = CustomTokenObtainPairSerializer()
@@ -537,3 +546,8 @@ def verify_code_login(request):
 
 
     return response
+
+
+
+
+
