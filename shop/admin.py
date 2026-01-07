@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Cart,Product,CartItem,Feature,ProductFeature,Category,Comment,MenuCategory,MenuItem,MenuSection,AmazingSlider,Checkout
+from .models import Cart,Product,CartItem,Feature,ProductFeature,Category,Comment,MenuCategory,MenuItem,MenuSection,AmazingSlider,Checkout,Discount,DiscountUsage
 # Register your models here.
 admin.site.register(Cart)
 admin.site.register(Checkout)
@@ -13,6 +13,8 @@ admin.site.register(Comment)
 admin.site.register(MenuCategory)
 admin.site.register(MenuSection)
 admin.site.register(MenuItem)
+admin.site.register(DiscountUsage)
+admin.site.register(Discount)
 
 
 from .models import Ticket, Reply

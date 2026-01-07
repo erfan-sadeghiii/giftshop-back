@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Product, Cart, CartItem,ProductImage,Category,Feature,ProductFeature,Comment,AmazingSlider,Checkout
+from .models import Product, Cart, CartItem,ProductImage,Category,Feature,ProductFeature,Comment,AmazingSlider,Checkout,Discount
 
 from accounts.serializers import UserSerializer 
 
@@ -295,3 +295,23 @@ class CheckoutSerializer(serializers.ModelSerializer):
     class Meta:
         model = Checkout
         fields = '__all__'
+
+
+
+class ApplyDiscountSerializer(serializers.Serializer):
+    code = serializers.CharField()
+    order_price = serializers.IntegerField(min_value=1)
+    order_id = serializers.IntegerField()
+
+
+
+
+
+
+
+
+class DiscountSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Discount
+        fields = '__all__'
+        read_only_fields = ['created_at', 'discount_amount']

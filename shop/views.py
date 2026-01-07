@@ -4,6 +4,14 @@
 
 
 
+# discounts/views.py
+from rest_framework.views import APIView
+
+from rest_framework.response import Response
+
+from .serializers import ApplyDiscountSerializer
+from .services import apply_discount,final_apply_discount
+
 
 
 
@@ -338,12 +346,12 @@ class MenuItemDetailView(generics.RetrieveUpdateDestroyAPIView):
         try:
             item = self.get_object()
         except Http404:
-            return Response({"error": "Item does not exist"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "Item does not exist"}, status=404)
 
         try:
             item.delete()
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": str(e)}, status=400)
 
         return Response(status=204) 
 
@@ -392,6 +400,7 @@ from django.conf import settings
 def create_payment(request):
     try:
         amount = request.data.get("amount")
+        offerCode = request.data.get("code")
         cartItems = request.data.get("cartItems")
         description = request.data.get("description", "Transaction")
         metadata = request.data.get("metadata", {})
@@ -401,12 +410,31 @@ def create_payment(request):
 
         amount = int(amount)
 
+        # ---------- APPLY DISCOUNT (CALC ONLY) ----------
+        discount_amount = 0
+        if offerCode:
+            discount_amount = apply_discount(
+                code=offerCode,
+                user=request.user,
+                order_price=amount,
+                order_id=None
+            )
+
+        final_amount = amount - discount_amount
+
+        if final_amount <= 0:
+            return Response(
+                {"error": "amount after discount is invalid"},
+                status=400
+            )
+
+        # ---------- ZARINPAL REQUEST ----------
         payload = {
             "merchant_id": settings.ZARINPAL_MERCHANT_ID,
-            "amount": amount,
+            "amount": final_amount,
             "callback_url": settings.ZARINPAL_CALLBACK_URL,
             "description": description,
-            "metadata": metadata
+            "metadata": metadata,
         }
 
         res = requests.post(
@@ -418,16 +446,27 @@ def create_payment(request):
 
         res_data = res.json()
 
+        # ❗️IMPORTANT CHECK
+        if res_data.get("errors"):
+            return Response(
+                {"error": res_data["errors"]["message"]},
+                status=400
+            )
+
         authority = res_data["data"]["authority"]
         payment_url = f"{settings.ZARINPAL_PAYMENT_BASE_URL}{authority}"
 
-        # 🔥 Save to DB
+        # ---------- SAVE CHECKOUT ----------
         Checkout.objects.create(
             user=request.user,
             authority=authority,
-            amount=amount,
-            items=cartItems
+            amount=final_amount,
+            items=cartItems,
+            offer_code=offerCode
         )
+
+        # ❗️DON'T finalize discount here
+        # finalize in callback after payment success
 
         return Response({
             "authority": authority,
@@ -436,7 +475,6 @@ def create_payment(request):
 
     except Exception as e:
         return Response({"error": str(e)}, status=500)
-
 
 
 
@@ -507,7 +545,17 @@ def verify_payment(request):
             checkout.fee_type = data.get("fee_type")
             checkout.fee = data.get("fee")
             checkout.save()
-
+            if checkout.offer_code:
+                try:
+                    final_apply_discount(
+                        code=checkout.offer_code,
+                        user=checkout.user,
+                        order_price=checkout.amount,
+                        order_id=checkout.ref_id
+                    )
+                except :
+                    # optionally log this error
+                    pass
             # Redirect with full info
             redirect_url = (
                 "https://tixogame.com/final-check/"
@@ -568,3 +616,48 @@ class AdminCheckoutViewSet(viewsets.ModelViewSet):
         checkout.is_paid = not checkout.is_paid
         checkout.save()
         return Response({"id": checkout.id, "is_paid": checkout.is_paid})
+
+
+
+
+
+
+
+
+class ApplyDiscountAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = ApplyDiscountSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        discount_amount = apply_discount(
+            code=serializer.validated_data['code'],
+            user=request.user,
+            order_price=serializer.validated_data['order_price'],
+            order_id=serializer.validated_data['order_id'],
+        )
+
+        final_price = serializer.validated_data['order_price'] - discount_amount
+
+        return Response({
+            "discount_amount": discount_amount,
+            "final_price": final_price
+        })
+
+
+
+
+
+
+from rest_framework import viewsets
+from rest_framework.permissions import IsAdminUser
+from .models import Discount
+from .serializers import DiscountSerializer
+
+
+class DiscountAdminViewSet(viewsets.ModelViewSet):
+
+    queryset = Discount.objects.all()
+    serializer_class = DiscountSerializer
+    permission_classes = [IsAdminUser]

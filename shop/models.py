@@ -308,6 +308,71 @@ class Checkout(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
 
+    offer_code = models.CharField(max_length=50,null=True, blank=True)
     def __str__(self):
         return f"{self.user} - {self.amount} - {self.authority}-is paid :{self.is_paid}"
 
+
+
+
+
+
+from django.utils import timezone
+
+class Discount(models.Model):
+    PERCENT = 'percent'
+    FIXED = 'fixed'
+
+    DISCOUNT_TYPE_CHOICES = [
+        (PERCENT, 'Percent'),
+        (FIXED, 'Fixed'),
+    ]
+
+    code = models.CharField(max_length=50, unique=True)
+    type = models.CharField(max_length=10, choices=DISCOUNT_TYPE_CHOICES)
+    value = models.PositiveIntegerField()
+
+    max_usage = models.PositiveIntegerField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+
+    start_at = models.DateTimeField()
+    end_at = models.DateTimeField()
+
+    min_order_price = models.PositiveIntegerField(default=0)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+    offer_code = models.CharField(max_length=50, null=True, blank=True)
+    discount_amount = models.IntegerField(default=0)
+
+    def is_valid_time(self):
+        now = timezone.now()
+        return self.start_at <= now <= self.end_at
+
+    def __str__(self):
+        return self.code
+
+
+
+
+class DiscountUsage(models.Model):
+    discount = models.ForeignKey(
+        Discount,
+        on_delete=models.CASCADE,
+        related_name='usages'
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE
+    )
+    order_id = models.PositiveIntegerField()
+    used_at = models.DateTimeField(auto_now_add=True)
+    # is_used = models.BooleanField(default=False)
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['discount', 'user'],
+                name='unique_discount_per_user'
+            )
+        ]
