@@ -235,7 +235,7 @@ class MenuCategory(models.Model):
     name = models.CharField(max_length=100)
     icon = models.CharField(max_length=50, blank=True, null=True)
     order = models.PositiveIntegerField(default=0)
-
+    link = models.CharField(max_length=255, default="/products")
     class Meta:
         ordering = ["order"]
 

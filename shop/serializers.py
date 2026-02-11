@@ -269,7 +269,7 @@ class MenuCategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MenuCategory
-        fields = ["id", "name", "icon", "order", "sections"]
+        fields = ["id","link", "name", "icon", "order", "sections"]
 
 
 class AmazingSliderSerializer(serializers.ModelSerializer):
