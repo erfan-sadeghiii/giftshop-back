@@ -404,6 +404,7 @@ def create_payment(request):
         cartItems = request.data.get("cartItems")
         description = request.data.get("description", "Transaction")
         metadata = request.data.get("metadata", {})
+        
 
         if not amount:
             return Response({"error": "Amount is required"}, status=400)
@@ -431,7 +432,8 @@ def create_payment(request):
         # ---------- ZARINPAL REQUEST ----------
         payload = {
             "merchant_id": settings.ZARINPAL_MERCHANT_ID,
-            "amount": final_amount,
+            "currency": "IRT",
+            "amount": final_amount, 
             "callback_url": settings.ZARINPAL_CALLBACK_URL,
             "description": description,
             "metadata": metadata,
@@ -461,6 +463,7 @@ def create_payment(request):
             user=request.user,
             authority=authority,
             amount=final_amount,
+            description =description,
             items=cartItems,
             offer_code=offerCode
         )

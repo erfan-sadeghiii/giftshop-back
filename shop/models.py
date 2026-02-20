@@ -301,7 +301,7 @@ class Checkout(models.Model):
     card_hash = models.CharField(max_length=255, null=True, blank=True)
     fee_type = models.CharField(max_length=50, null=True, blank=True)
     fee = models.IntegerField(null=True, blank=True)
-
+    description = models.TextField(null=True, blank=True)
     # Errors
     error_code = models.IntegerField(null=True, blank=True)
     error_message = models.CharField(max_length=255, null=True, blank=True)
